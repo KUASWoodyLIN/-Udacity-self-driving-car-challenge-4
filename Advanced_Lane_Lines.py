@@ -6,7 +6,6 @@ import numpy
 import cv2
 import matplotlib.pyplot as plt
 
-
 from image_processing.calibration import camera_cal, found_chessboard, read_camera_cal_file, WIDE_DIST_FILE
 
 
