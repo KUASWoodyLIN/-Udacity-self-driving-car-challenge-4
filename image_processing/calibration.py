@@ -7,10 +7,11 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-
-IMAGE_PATH = '../camera_cal/'
-images_path = glob(IMAGE_PATH + '*.jpg')
-file = 'wide_dist_pickle.p'
+ROOT_PATH = os.getcwd()
+CAL_PATH = os.path.join(ROOT_PATH, 'image_processing')
+IMAGE_DIR = os.path.join(CAL_PATH, 'camera_cal/')
+WIDE_DIST_FILE = os.path.join(CAL_PATH, 'wide_dist_pickle.p')
+images_path = glob(IMAGE_DIR + '*.jpg')
 
 
 def found_chessboard():
@@ -64,24 +65,29 @@ def camera_cal(objpoints, imgpoints):
     plt.imshow(dst)
     plt.show()
     # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
-    if not os.path.exists(file):
-        print('Pickle File {} is not exists, create one now.'.format(file))
+    if not os.path.exists(WIDE_DIST_FILE):
+        print('Pickle File {} is not exists, create one now.'.format(WIDE_DIST_FILE))
         dist_pickle = {}
         dist_pickle["mtx"] = mtx
         dist_pickle["dist"] = dist
-        pickle.dump(dist_pickle, open("wide_dist_pickle.p", "wb"))
+        pickle.dump(dist_pickle, open(WIDE_DIST_FILE, "wb"))
 
     return mtx, dist
 
 
 def read_camera_cal_file():
-    with open(file, 'rb') as f:
+    with open(WIDE_DIST_FILE, 'rb') as f:
         dump = pickle.load(f)
     return dump['mtx'], dump['dist']
 
 
 if __name__ == '__main__':
-    if not os.path.exists(file):
+    ROOT_PATH = os.getcwd()
+    IMAGE_PATH = os.path.join(ROOT_PATH, 'camera_cal/')
+    WIDE_DIST_FILE = os.path.join(ROOT_PATH, 'wide_dist_pickle.p')
+    images_path = glob(IMAGE_PATH + '*.jpg')
+
+    if not os.path.exists(WIDE_DIST_FILE):
         objpoints, imgpoints = found_chessboard()
         mtx, dist = camera_cal(objpoints, imgpoints)
     else:
