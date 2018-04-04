@@ -6,6 +6,14 @@ import matplotlib.gridspec as gridspec
 
 
 def abs_sobel_thresh(img, orient='x', kernel=3, thresh=(0, 255)):
+    """
+    Input: img, thresh
+        img = input gray Image
+        kernel = kernel size
+        thresh = gray image transform to binary image use
+    Output: binary_output
+        binary_output = output binary image
+    """
     if orient == 'x':
         x = 1
         y = 0
@@ -26,6 +34,14 @@ def abs_sobel_thresh(img, orient='x', kernel=3, thresh=(0, 255)):
 
 # Magnitude of the Gradient
 def mag_thresh(img, kernel=3, thresh=(0, 255)):
+    """
+    Input: img, thresh
+        img = input gray Image
+        kernel = kernel size
+        thresh = gray image transform to binary image use
+    Output: binary_output
+        binary_output = output binary image
+    """
     # 1) Take the gradient in x and y separately
     sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=kernel)
     sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=kernel)
@@ -41,6 +57,14 @@ def mag_thresh(img, kernel=3, thresh=(0, 255)):
 
 # Direction of the Gradient
 def dir_thresh(img, kernel=3, thresh=(0, np.pi/2)):
+    """
+    Input: img, thresh
+        img = input gray Image
+        kernel = kernel size
+        thresh = gray image transform to binary image use
+    Output: binary_output
+        binary_output = output binary image
+    """
     # 2) Take the gradient in x and y separately
     sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=kernel)
     sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=kernel)
@@ -55,29 +79,80 @@ def dir_thresh(img, kernel=3, thresh=(0, np.pi/2)):
     return binary_output
 
 
-def combing_thresh(img, ksize=3):
+def hls_detect(img, thresh=(0, 255)):
+    """
+    Input: img, thresh
+        img = input RGB Image
+        thresh = gray image transform to binary image use
+    Output: binary_output
+        binary_output = output binary image
+    """
+    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+    s_channel = hls[:, :, 2]
+    binary_output = np.zeros_like(s_channel)
+    binary_output[(s_channel > thresh[0]) & (s_channel < thresh[1])] = 1
+    return binary_output
+
+
+def combing_sobel_schannel_thresh(img, kernel=3):
+    """
+    Is function combing Sobelx, Sobley, Magnitude and Direction Operator,
+    Input: img, kernel
+        img = input RGB Image
+        kernel = kernel size
+    Output: binary_output
+        binary_output = output binary image
+    """
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Threshold x gradient
+    sobalx_binary = abs_sobel_thresh(img_gray, orient='x', kernel=kernel, thresh=(30, 100))
+
+    # Threshold color channel
+    s_channel_binary = hls_detect(img, thresh=(90, 255))
+
+    # Combine the two binary thresholds
+    combined_binary = np.zeros_like(sobalx_binary)
+    combined_binary[(sobalx_binary == 1) | (s_channel_binary == 1)] = 1
+
+    # plt.figure(figsize=(12, 12))
+    # plt.subplot(3, 1, 1)
+    # plt.title('Sobal X')
+    # plt.imshow(sobalx_binary, cmap='gray')
+    # plt.subplot(3, 1, 2)
+    # plt.title('HLS S Channel')
+    # plt.imshow(s_channel_binary, cmap='gray')
+    # plt.subplot(3, 1, 3)
+    # plt.title('Combine')
+    # plt.imshow(combined_binary, cmap='gray')
+
+    return combined_binary
+
+
+def combing_smd_thresh(img, kernel=3):
+    """
+    Is function combing Sobelx, Sobley, Magnitude and Direction Operator,
+    Input: img, kernel
+        img = input RGB Image
+        kernel = kernel size
+    Output: binary_output
+        binary_output = output binary image
+    """
     # Apply each of the thresholding functions
-    gradx = abs_sobel_thresh(img, orient='x', kernel=ksize, thresh=(30, 100))
-    grady = abs_sobel_thresh(img, orient='y', kernel=ksize, thresh=(30, 100))
-    mag_binary = mag_thresh(img, kernel=ksize, thresh=(20, 100))
-    dir_binary = dir_thresh(img, kernel=ksize, thresh=(0.7, 1.3))
+    gradx = abs_sobel_thresh(img, orient='x', kernel=kernel, thresh=(30, 100))
+    grady = abs_sobel_thresh(img, orient='y', kernel=kernel, thresh=(30, 100))
+    mag_binary = mag_thresh(img, kernel=kernel, thresh=(20, 100))
+    dir_binary = dir_thresh(img, kernel=kernel, thresh=(0.7, 1.3))
 
     combined = np.zeros_like(dir_binary)
     combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
     return combined
 
 
-def hls_detect(img, thresh=(0,255)):
-    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-    S_channel = hls[:, :, 2]
-    binary_output = np.zeros_like(S_channel)
-    binary_output[(S_channel > thresh[0]) & (S_channel < thresh[1])] = 1
-    return binary_output
-
-
 if __name__ == '__main__':
 
     test_image = 'straight_lines1.jpg'
+    test_image = '../test_images/test4.jpg'
     # Read image
     img = cv2.imread(test_image)
     # Image transform
@@ -90,15 +165,12 @@ if __name__ == '__main__':
     img_mag_out = mag_thresh(img_gray, kernel=7, thresh=(20, 100))
     # Direction Operator
     img_dir_out = dir_thresh(img_gray, kernel=7, thresh=(0.7, 1.3))
-    # Combined all the operator
-    img_comb_out = combing_thresh(img_gray, ksize=7)
+    # Combined Sobelx, Sobely, Magnitude, Direction the operator
+    img_comb_out_1 = combing_smd_thresh(img_gray, kernel=7)
 
     # Customizing Figure Layouts
     fig = plt.figure(figsize=(16, 8))
     gs1 = gridspec.GridSpec(3, 2, right=0.48, wspace=0.1)
-
-    # HLS S Channel detection
-    img_s_output = hls_detect(img, thresh=(90, 255))
 
     ax1 = fig.add_subplot(gs1[0, 0])
     plt.title('Sobel X')
@@ -116,12 +188,19 @@ if __name__ == '__main__':
     plt.title('Direction')
     plt.imshow(img_dir_out, cmap='gray')
 
-    ax5 = fig.add_subplot(gs1[2, 0])
+    ax5 = fig.add_subplot(gs1[2, :])
     plt.title('Combined')
-    plt.imshow(img_comb_out, cmap='gray')
+    plt.imshow(img_comb_out_1, cmap='gray')
 
-    ax6 = fig.add_subplot(gs1[2, 1])
-    plt.title('HLS S Channel')
+    # HLS S Channel detection
+    img_s_output = hls_detect(img, thresh=(60, 255))
+    # Combined Sobelx, HLS S Channel
+    img_comb_out_2 = combing_sobel_schannel_thresh(img, kernel=7)
+
+    plt.figure()
+    plt.subplot(2, 1, 1)
     plt.imshow(img_s_output, cmap='gray')
+    plt.subplot(2, 1, 2)
+    plt.imshow(img_comb_out_2, cmap='gray')
 
     plt.show()

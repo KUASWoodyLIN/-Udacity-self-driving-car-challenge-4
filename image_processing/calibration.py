@@ -7,12 +7,6 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-ROOT_PATH = os.getcwd()
-CAL_PATH = os.path.join(ROOT_PATH, 'image_processing')
-IMAGE_DIR = os.path.join(CAL_PATH, 'camera_cal/')
-WIDE_DIST_FILE = os.path.join(CAL_PATH, 'wide_dist_pickle.p')
-images_path = glob(IMAGE_DIR + '*.jpg')
-
 
 def found_chessboard():
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0) (x,y,z)
@@ -75,8 +69,8 @@ def camera_cal(objpoints, imgpoints):
     return mtx, dist
 
 
-def read_camera_cal_file():
-    with open(WIDE_DIST_FILE, 'rb') as f:
+def read_camera_cal_file(file):
+    with open(file, 'rb') as f:
         dump = pickle.load(f)
     return dump['mtx'], dump['dist']
 
@@ -92,4 +86,4 @@ if __name__ == '__main__':
         mtx, dist = camera_cal(objpoints, imgpoints)
     else:
         print('Get parameter from pickle file')
-        mtx, dist = read_camera_cal_file()
+        mtx, dist = read_camera_cal_file(WIDE_DIST_FILE)
