@@ -21,7 +21,10 @@ if __name__ == '__main__':
     img = cv2.undistort(img, mtx, dist, None, None)
 
     offset = img.shape[1] / 2
-    src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])
+    # Longer one
+    # src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])
+
+    src = np.float32([(578, 460), (704, 460), (1120, 720), (193, 720)])
     dst = np.float32([(offset-300, 0), (offset+300, 0), (offset+300, 720), (offset-300, 720)])
 
     # use cv2.getPerspectiveTransform() to get M, the transform matrix
@@ -33,7 +36,7 @@ if __name__ == '__main__':
     plt.figure('figure1', figsize=(12, 8))
     plt.subplot(2, 1, 1)
     plt.imshow(img)
-    plt.plot([603, 675, 1122, 193, 603], [440, 440, 720, 720, 440])
+    plt.plot([578, 704, 1122, 193, 578], [460, 460, 720, 720, 460])
     plt.subplot(2, 1, 2)
     plt.imshow(img_out)
     plt.plot([offset-300, offset+300, offset+300, offset-300, offset-300], [0, 0, 720, 720, 0])

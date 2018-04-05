@@ -105,11 +105,12 @@ def combing_sobel_schannel_thresh(img, kernel=3):
     """
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+
     # Threshold x gradient
     sobalx_binary = abs_sobel_thresh(img_gray, orient='x', kernel=kernel, thresh=(30, 100))
 
     # Threshold color channel
-    s_channel_binary = hls_detect(img, thresh=(90, 255))
+    s_channel_binary = hls_detect(img, thresh=(155, 255))
 
     # Combine the two binary thresholds
     combined_binary = np.zeros_like(sobalx_binary)
