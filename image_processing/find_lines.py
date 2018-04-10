@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+
 # ----------------------------------------------------------------------- #
 # ------------------ Convolution Sliding Window Search ------------------ #
 # ----------------------------------------------------------------------- #
@@ -130,10 +131,8 @@ def histogram_search(binary_warped):
         win_xright_low = rightx_current - margin
         win_xright_high = rightx_current + margin
         # Draw the windows on the visualization image
-        cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),
-        (0,255,0), 2)
-        cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),
-        (0,255,0), 2)
+        cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high), (0, 255, 0), 2)
+        cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high), (0, 255, 0), 2)
         # Identify the nonzero pixels in x and y within the window
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
         (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
@@ -168,21 +167,66 @@ def histogram_search(binary_warped):
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
 
-    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-    plt.figure()
-    plt.imshow(out_img)
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
-    plt.xlim(0, 1280)
-    plt.ylim(720, 0)
-    measure_curv(left_fit, right_fit, left_fitx, right_fitx)
+    # out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+    # out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+    # # plot the left and right lines on image
+    # plt.figure()
+    # plt.imshow(out_img)
+    # plt.plot(left_fitx, ploty, color='yellow')
+    # plt.plot(right_fitx, ploty, color='yellow')
+    # plt.xlim(0, 1280)
+    # plt.ylim(720, 0)
+
+    # Draw the car path on the wrap images
+    wrap_path = draw_path_way(binary_warped, left_fitx, right_fitx, ploty)
+
+    # Determine the curvature of the lane and vehicle position with respect to center.
+    curv = measure_curv(left_fit, right_fit, left_fitx, right_fitx)
+    center = measure_center_dist(left_fitx[-1], right_fitx[-1])
+    if center > 0:
+        left_or_right = "right"
+    else:
+        left_or_right = "left"
+
+    return wrap_path, curv, center, left_or_right
+
+
+def histogram_search2(binary_warped):
+    # Assume you now have a new warped binary image
+    # from the next frame of video (also called "binary_warped")
+    # It's now much easier to find line pixels!
+    nonzero = binary_warped.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+    margin = 80
+    left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
+                                   left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
+                                                                         left_fit[1] * nonzeroy +
+                                                                         left_fit[2] + margin)))
+
+    right_lane_inds = ((nonzerox > (right_fit[0] * (nonzeroy ** 2) + right_fit[1] * nonzeroy +
+                                    right_fit[2] - margin)) & (nonzerox < (right_fit[0] * (nonzeroy ** 2) +
+                                                                           right_fit[1] * nonzeroy +
+                                                                           right_fit[2] + margin)))
+
+    # Again, extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds]
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+    left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+    right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
 
 
 # ----------------------------------------------------------------------- #
 # ------------------------- Measuring Curvature ------------------------- #
 # ----------------------------------------------------------------------- #
-def measure_curv(left_fit, right_fit, leftx, rightx):
+def measure_curv(left_fit, right_fit, left_fitx, right_fitx):
     ploty = np.linspace(0, 719, num=720)  # to cover same y-range as image
 
     # Define y-value where we want radius of curvature
@@ -198,13 +242,45 @@ def measure_curv(left_fit, right_fit, leftx, rightx):
     xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
 
     # Fit new polynomials to x,y in world space
-    left_fit_cr = np.polyfit(ploty * ym_per_pix, leftx * xm_per_pix, 2)
-    right_fit_cr = np.polyfit(ploty * ym_per_pix, rightx * xm_per_pix, 2)
+    left_fit_cr = np.polyfit(ploty * ym_per_pix, left_fitx * xm_per_pix, 2)
+    right_fit_cr = np.polyfit(ploty * ym_per_pix, right_fitx * xm_per_pix, 2)
     # Calculate the new radii of curvature
     left_curverad = ((1 + (2 * left_fit_cr[0] * y_eval * ym_per_pix + left_fit_cr[1]) ** 2) ** 1.5) / np.absolute(
         2 * left_fit_cr[0])
     right_curverad = ((1 + (2 * right_fit_cr[0] * y_eval * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(
         2 * right_fit_cr[0])
     # Now our radius of curvature is in meters
-    print(left_curverad, 'm', right_curverad, 'm')
     # Example values: 632.1 m    626.2 m
+    print(left_curverad, 'm', right_curverad, 'm')
+    # return the left_curverad
+    return (left_curverad + right_curverad) / 2
+
+
+# ----------------------------------------------------------------------- #
+# -------------- Measuring Car distance from center of road ------------- #
+# ----------------------------------------------------------------------- #
+def measure_center_dist(left_botton_pixel, right_bottom_pixel, img_width=1280):
+    x = 3.7 * img_width / (right_bottom_pixel - left_botton_pixel)
+    road_center = (right_bottom_pixel + left_botton_pixel) / 2
+    car_center = (img_width / 2)
+    dist = (car_center - road_center) / img_width * x
+    return dist
+
+
+# ----------------------------------------------------------------------- #
+# ----------------------- Draw path on wrap image ----------------------- #
+# ----------------------------------------------------------------------- #
+def draw_path_way(binary_warped, left_fitx, right_fitx, ploty):
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
+    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+
+    return color_warp
