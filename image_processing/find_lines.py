@@ -167,8 +167,9 @@ def histogram_search(binary_warped):
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
 
-    # out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-    # out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+
     # # plot the left and right lines on image
     # plt.figure()
     # plt.imshow(out_img)
@@ -201,13 +202,13 @@ def histogram_search2(binary_warped):
     margin = 80
     left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
                                    left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
-                                                                         left_fit[1] * nonzeroy +
-                                                                         left_fit[2] + margin)))
+                                                                         left_fit[1] * nonzeroy + left_fit[
+                                                                             2] + margin)))
 
     right_lane_inds = ((nonzerox > (right_fit[0] * (nonzeroy ** 2) + right_fit[1] * nonzeroy +
                                     right_fit[2] - margin)) & (nonzerox < (right_fit[0] * (nonzeroy ** 2) +
-                                                                           right_fit[1] * nonzeroy +
-                                                                           right_fit[2] + margin)))
+                                                                           right_fit[1] * nonzeroy + right_fit[
+                                                                               2] + margin)))
 
     # Again, extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
@@ -234,7 +235,7 @@ def measure_curv(left_fit, right_fit, left_fitx, right_fitx):
     y_eval = np.max(ploty)
     left_curverad = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit[0])
     right_curverad = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit[0])
-    print(left_curverad, right_curverad)
+    # print(left_curverad, right_curverad)
     # Example values: 1926.74 1908.48
 
     # Define conversions in x and y from pixels space to meters
@@ -251,8 +252,7 @@ def measure_curv(left_fit, right_fit, left_fitx, right_fitx):
         2 * right_fit_cr[0])
     # Now our radius of curvature is in meters
     # Example values: 632.1 m    626.2 m
-    print(left_curverad, 'm', right_curverad, 'm')
-    # return the left_curverad
+    # print(left_curverad, 'm', right_curverad, 'm')
     return (left_curverad + right_curverad) / 2
 
 

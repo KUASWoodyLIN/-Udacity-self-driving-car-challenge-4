@@ -150,17 +150,47 @@ def combing_smd_thresh(img, kernel=3):
     return combined
 
 
+def combing_color_thresh(img):
+    # hsv yellow and white
+    yellow_low = np.array([0, 80, 100])
+    yellow_high = np.array([50, 255, 255])
+    white_low = np.array([18, 0, 180])
+    white_high = np.array([255, 80, 255])
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask_yellow = cv2.inRange(hsv, yellow_low, yellow_high)
+    mask_white = cv2.inRange(hsv, white_low, white_high)
+
+    # RGB RED channel
+    thresh = (215, 255)
+    binary = np.zeros_like(img[:, :, 2])    # RED channel
+    binary[(img[:, :, 2] > thresh[0]) & (img[:, :, 2] <= thresh[1])] = 255
+
+    # combined mask
+    combined_mask = cv2.bitwise_or(mask_yellow, mask_white)
+    combined_mask = cv2.bitwise_or(combined_mask, binary)
+
+    return combined_mask
+
+
 if __name__ == '__main__':
 
-    test_image = 'straight_lines1.jpg'
-    test_image = '../test_images/test4.jpg'
+    test_image = '../test_images/straight_lines1.jpg'
+    test_image = '../test_images/test6.jpg'
     # Read image
     img = cv2.imread(test_image)
+
+    # bird-eye view
+    offset = 1280 / 2
+    src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])  # Longer one
+    dst = np.float32([(offset - 300, 0), (offset + 300, 0), (offset + 300, 720), (offset - 300, 720)])
+    perspective_M = cv2.getPerspectiveTransform(src, dst)
+    img = cv2.warpPerspective(img, perspective_M, img.shape[1::-1], flags=cv2.INTER_LINEAR)
+
     # Image transform
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Sobel Operator
-    img_sobelx_out = abs_sobel_thresh(img_gray, orient='x', kernel=7, thresh=(30, 100))
+    img_sobelx_out = abs_sobel_thresh(img_gray, orient='x', kernel=5, thresh=(40, 100))
     img_sobely_out = abs_sobel_thresh(img_gray, orient='y', kernel=7, thresh=(30, 100))
     # Magnitude Operator
     img_mag_out = mag_thresh(img_gray, kernel=7, thresh=(20, 100))
@@ -168,6 +198,10 @@ if __name__ == '__main__':
     img_dir_out = dir_thresh(img_gray, kernel=7, thresh=(0.7, 1.3))
     # Combined Sobelx, Sobely, Magnitude, Direction the operator
     img_comb_out_1 = combing_smd_thresh(img_gray, kernel=7)
+
+    # Show original image
+    plt.figure()
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
     # Customizing Figure Layouts
     fig = plt.figure(figsize=(16, 8))
@@ -194,14 +228,25 @@ if __name__ == '__main__':
     plt.imshow(img_comb_out_1, cmap='gray')
 
     # HLS S Channel detection
-    img_s_output = hls_detect(img, thresh=(60, 255))
+    img_s_output = hls_detect(img, thresh=(155, 255))
     # Combined Sobelx, HLS S Channel
     img_comb_out_2 = combing_sobel_schannel_thresh(img, kernel=7)
+    # HSV yellow and white thresh
+    img_comb_out_3 = combing_color_thresh(img)
 
-    plt.figure()
-    plt.subplot(2, 1, 1)
+    plt.figure(figsize=(8, 12))
+    plt.subplot(4, 1, 1)
+    plt.title('Sobel X')
+    plt.imshow(img_sobelx_out, cmap='gray')
+    plt.subplot(4, 1, 2)
+    plt.title('HLS S Channel')
     plt.imshow(img_s_output, cmap='gray')
-    plt.subplot(2, 1, 2)
+    plt.subplot(4, 1, 3)
+    plt.title('Combined Sobelx and HLS S Channel')
     plt.imshow(img_comb_out_2, cmap='gray')
+    plt.subplot(4, 1, 4)
+    plt.title('Combined HSV_yellow and HSV_white')
+    plt.imshow(img_comb_out_3, cmap='gray')
+
 
     plt.show()

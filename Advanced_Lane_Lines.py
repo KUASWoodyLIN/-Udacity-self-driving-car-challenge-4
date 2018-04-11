@@ -5,9 +5,10 @@ from glob import glob
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from moviepy.editor import VideoFileClip
 
 from Udacity_self_driving_car_challenge_4.image_processing.calibration import camera_cal, found_chessboard, read_camera_cal_file
-from Udacity_self_driving_car_challenge_4.image_processing.edge_detection import combing_sobel_schannel_thresh
+from Udacity_self_driving_car_challenge_4.image_processing.edge_detection import combing_color_thresh
 from Udacity_self_driving_car_challenge_4.image_processing.find_lines import conv_sliding_search, histogram_search
 # The goals / steps of this project are the following:
 #
@@ -23,6 +24,7 @@ from Udacity_self_driving_car_challenge_4.image_processing.find_lines import con
 ROOT_PATH = os.getcwd()
 IMAGE_TEST_DIR = os.path.join(ROOT_PATH, 'test_images')
 IMAGE_OUTPUT_DIR = os.path.join(ROOT_PATH, 'output_images')
+VIDEO_OUTPUT_DIR = os.path.join(ROOT_PATH, 'output_video')
 IMAGE_PROCESSING_PATH = os.path.join(ROOT_PATH, 'image_processing')
 WIDE_DIST_FILE = os.path.join(IMAGE_PROCESSING_PATH, 'wide_dist_pickle.p')
 IMAGES_PATH = glob(IMAGE_TEST_DIR + '/*.jpg')
@@ -69,13 +71,14 @@ class Line():
         self.ally = None
 
 
-
 def process_image(image):
     # Apply a distortion correction to raw images.
     image = cv2.undistort(image, mtx, dist, None, None)
 
     # Use color transforms, gradients to find the object edge and change into binary image
-    image_binary = combing_sobel_schannel_thresh(image, kernel=7)
+    image_binary = combing_color_thresh(image)
+    plt.figure()
+    plt.imshow(image_binary, cmap='gray')
 
     # Transform image to bird view
     image_bird_view = cv2.warpPerspective(image_binary, perspective_M, image.shape[1::-1], flags=cv2.INTER_LINEAR)
@@ -98,15 +101,18 @@ def process_image(image):
     return img_out
 
 
-def test():
+def test_image():
     # random chose image to test
     random_chose = random.randint(0, len(IMAGES_PATH)-1)
     img_test = IMAGES_PATH[random_chose]
     print(img_test)
-    img = plt.imread('./test_images/test5.jpg')
-    #img = plt.imread(img_test)
+    img = cv2.imread('./test_images/test5.jpg')
 
     img_out = process_image(img)
+
+    # Converter BGR -> RGB for plt show
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_out = cv2.cvtColor(img_out, cv2.COLOR_BGR2RGB)
 
     plt.figure(figsize=(10, 8))
     plt.subplot(2, 1, 1)
@@ -118,13 +124,40 @@ def test():
     plt.show()
 
 
-def main():
+def test_images():
     for path in IMAGES_PATH:
-        img = plt.imread(path)
+        img = cv2.imread(path)
         img_out = process_image(img)
         img_out_path = os.path.join(IMAGE_OUTPUT_DIR, os.path.split(path)[-1].split('.')[0] + '.png')
-        plt.imsave(img_out_path, img_out)
+        cv2.imwrite(img_out_path, img_out)
+
+
+def test_video():
+    video_file = 'project_video.mp4'
+    video_output_file = os.path.join(VIDEO_OUTPUT_DIR, video_file.split('.')[0] + '.avi')
+
+    # Video save
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(video_output_file, fourcc, 20, (1280, 720))
+
+    # Video read
+    cap = cv2.VideoCapture(video_file)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if ret:
+            img_out = process_image(frame)
+
+            out.write(img_out)
+            cv2.imshow('frame', img_out)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        else:
+            break
+
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
-    test()
+    test_video()
