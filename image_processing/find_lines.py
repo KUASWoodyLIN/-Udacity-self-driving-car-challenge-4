@@ -189,7 +189,7 @@ def histogram_search(binary_warped):
     else:
         left_or_right = "left"
 
-    return wrap_path, curv, center, left_or_right
+    return wrap_path, curv, center, left_or_right, left_fit, right_fit, leftx, rightx
 
 
 def histogram_search2(binary_warped, left_fit, right_fit):
@@ -234,7 +234,7 @@ def histogram_search2(binary_warped, left_fit, right_fit):
     else:
         left_or_right = "left"
 
-    return wrap_path, curv, center, left_or_right
+    return wrap_path, curv, center, left_or_right, left_fit, right_fit, leftx, rightx
 
 
 # ----------------------------------------------------------------------- #

@@ -253,5 +253,4 @@ if __name__ == '__main__':
     plt.title('Combined HSV_yellow and HSV_white')
     plt.imshow(img_comb_out_3, cmap='gray')
 
-
     plt.show()

@@ -75,15 +75,38 @@ def read_camera_cal_file(file):
     return dump['mtx'], dump['dist']
 
 
-if __name__ == '__main__':
-    ROOT_PATH = os.getcwd()
-    IMAGE_PATH = os.path.join(ROOT_PATH, 'camera_cal/')
-    WIDE_DIST_FILE = os.path.join(ROOT_PATH, 'wide_dist_pickle.p')
-    images_path = glob(IMAGE_PATH + '*.jpg')
-
+def test():
     if not os.path.exists(WIDE_DIST_FILE):
         objpoints, imgpoints = found_chessboard()
         mtx, dist = camera_cal(objpoints, imgpoints)
     else:
         print('Get parameter from pickle file')
         mtx, dist = read_camera_cal_file(WIDE_DIST_FILE)
+
+
+def undistort_test_images():
+    if not os.path.exists(WIDE_DIST_FILE):
+        objpoints, imgpoints = found_chessboard()
+        mtx, dist = camera_cal(objpoints, imgpoints)
+    else:
+        print('Get parameter from pickle file')
+        mtx, dist = read_camera_cal_file(WIDE_DIST_FILE)
+    vstack = []
+    for path in images_path:
+        img = cv2.imread(path)
+        img_out = cv2.undistort(img, mtx, dist, None, None)
+        img = cv2.resize(img, (320, 180))
+        img_out = cv2.resize(img_out, (320, 180))
+        vstack.append(np.hstack((img, img_out)))
+    vstack = np.vstack(vstack)
+    cv2.imwrite('../output_images/undistort_compare.png', vstack)
+
+
+if __name__ == '__main__':
+    ROOT_PATH = os.getcwd()
+    IMAGE_PATH = os.path.join(ROOT_PATH, 'camera_cal/')
+    WIDE_DIST_FILE = os.path.join(ROOT_PATH, 'wide_dist_pickle.p')
+    images_path = glob(IMAGE_PATH + '*.jpg')
+
+    test()
+    # undistort_test_images()
