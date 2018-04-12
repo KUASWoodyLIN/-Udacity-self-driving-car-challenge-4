@@ -1,39 +1,56 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Advanced Lane Finding Project
 
+### 專案路徑布局
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
+```
+├── Advanced_Lane_Lines.py
+├── project_video.mp4				# Project 影像
+├── challenge_video.mp4				# 挑戰 1) 影像
+├── harder_challenge_video.mp4		# 挑戰 2) 影像
+├── __init__.py	
+├── LICENSE
+├── image_processing				# 所有pipline中使用到的function都在此資料夾底下
+│   ├── camera_cal					# 校正相機使用的影像
+│   │   └── .....					
+│   ├── calibration.py				# 校正相機function
+│   ├── wide_dist_pickle.p			# 存放校正相機後得到cameraMatrix & distCoeffs數值
+│   ├── edge_detection.py			# 檢測邊緣function,像sobel,color transforms等等 
+│   ├── find_lines.py				# 找出車到線function
+│   ├── transform.py				# 轉換測試程式,用來調整測試參數用
+│   ├── line_fit_fix.py				# 檢測找車道function是否有正確找出車道
+│   ├── preprocessing.py			# 影像遮罩，將不重要地方遮罩掉
+│   └── __init__.py	
+├── examples						# 執行結果範例
+│   └── .....
+├── test_images						# 測試影片
+│   └── .....
+├── output_images					# 測試影片輸出資料夾
+│   └── .....
+├── output_video					# 測試影像輸出資料夾
+│   ├── project_video_long_line.avi		# 使用較長的道路檢測
+│   └── project_video_short_line.avi	# 使用較短的道路建測
+└── README.md
 
-Creating a great writeup:
+```
+
 ---
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+### Camera Calibration
 
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
+程式位置： [calibration.py](./image_processing/calibration.py)
 
-The Project
+裡面分為兩個function：`found_chessboard()`, `camera_cal()`
+
+`found_chessboard()`: 用來找出棋盤的corners。
+`camera_cla()`: 可以將影像undistorted。
+
+下圖為校正前和校正後的比較圖，左圖為原始圖，又圖為校正後結果
+
+![校正前後比較](/home/woodylin/tensorflow3/Udacity_self_driving_car/Udacity_self_driving_car_challenge_4/output_images/undistort_compare.png)
+
 ---
 
-The goals / steps of this project are the following:
+### Edge Detection
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
-
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
-
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
-
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+程式位置： [edge_detection.py](./image_processing/edge_detection.py)
 

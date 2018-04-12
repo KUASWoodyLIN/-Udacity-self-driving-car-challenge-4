@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from Udacity_self_driving_car_challenge_4.image_processing.calibration import camera_cal, found_chessboard, read_camera_cal_file
 from Udacity_self_driving_car_challenge_4.image_processing.edge_detection import combing_color_thresh
-from Udacity_self_driving_car_challenge_4.image_processing.find_lines import histogram_search
+from Udacity_self_driving_car_challenge_4.image_processing.find_lines import histogram_search, histogram_search2
 from Udacity_self_driving_car_challenge_4.image_processing.line_fit_fix import Line
 
 
@@ -31,17 +31,20 @@ else:
 
 # Get Perspective Transform Parameter
 offset = 1280 / 2
-# src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])   # Longer one
-src = np.float32([(578, 460), (704, 460), (1120, 720), (193, 720)])
+# src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])     # Longer line
+src = np.float32([(578, 460), (704, 460), (1120, 720), (193, 720)])     # shorter line
 dst = np.float32([(offset-300, 0), (offset+300, 0), (offset+300, 720), (offset-300, 720)])
 perspective_M = cv2.getPerspectiveTransform(src, dst)
-inver_perspective_M= cv2.getPerspectiveTransform(dst, src)
+inver_perspective_M = cv2.getPerspectiveTransform(dst, src)
 
 left_line = Line()
 right_line = Line()
+count_h1 = 0
+count_h2 = 0
 
 
 def process_image(image, show_birdview=False):
+    global count_h1, count_h2
     # Apply a distortion correction to raw images.
     image = cv2.undistort(image, mtx, dist, None, None)
 
@@ -52,7 +55,17 @@ def process_image(image, show_birdview=False):
     image_bird_view = cv2.warpPerspective(image_binary, perspective_M, image.shape[1::-1], flags=cv2.INTER_LINEAR)
 
     # find the road lines, curvature and distance between car_center and road_center
-    color_warp, curv, center, left_or_right = histogram_search(image_bird_view)
+    if not left_line.detected or not right_line.detected:
+        color_warp, curv, center, left_or_right, left_line.new_fit, right_line.new_fit, \
+        left_line.allx, right_line.allx = histogram_search(image_bird_view)
+        count_h1 += 1
+    else:
+        color_warp, curv, center, left_or_right, left_line.new_fit, right_line.new_fit, \
+        left_line.allx, right_line.allx = histogram_search2(image_bird_view, left_line.best_fit, right_line.best_fit)
+        count_h2 += 1
+    # Check the lines health
+    left_line.fit_fix()
+    right_line.fit_fix()
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
     newwarp = cv2.warpPerspective(color_warp, inver_perspective_M, (image.shape[1], image.shape[0]))
@@ -73,7 +86,6 @@ def process_image(image, show_birdview=False):
         show_color_warp = cv2.resize(color_warp, (360, 360))
         show_color_warp = cv2.addWeighted(show_image_bird_view, 1, show_color_warp, 0.5, 0)
         return img_out, show_image_bird_view, show_color_warp
-
 
     return img_out
 
@@ -110,7 +122,6 @@ def test_images():
 
 
 def test_video():
-    n = 0
     video_file = 'project_video.mp4'
     video_output_file = os.path.join(VIDEO_OUTPUT_DIR, video_file.split('.')[0] + '.avi')
 
@@ -129,13 +140,10 @@ def test_video():
             out.write(img_out)
             cv2.imshow('frame', img_out)
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                # press 'q' to save img
-                cv2.imwrite(IMAGE_TEST_DIR + '/project' + str(n) + '.png', frame)
-                n += 1
-                # break
+                break
         else:
             break
-
+    print("h1: {}\th2: {}".format(count_h1, count_h2))
     cap.release()
     out.release()
     cv2.destroyAllWindows()
