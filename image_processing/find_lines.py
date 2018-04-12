@@ -192,7 +192,7 @@ def histogram_search(binary_warped):
     return wrap_path, curv, center, left_or_right
 
 
-def histogram_search2(binary_warped):
+def histogram_search2(binary_warped, left_fit, right_fit):
     # Assume you now have a new warped binary image
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
@@ -222,6 +222,19 @@ def histogram_search2(binary_warped):
     ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+
+    # Draw the car path on the wrap images
+    wrap_path = draw_path_way(binary_warped, left_fitx, right_fitx, ploty)
+
+    # Determine the curvature of the lane and vehicle position with respect to center.
+    curv = measure_curv(left_fit, right_fit, left_fitx, right_fitx)
+    center = measure_center_dist(left_fitx[-1], right_fitx[-1])
+    if center > 0:
+        left_or_right = "right"
+    else:
+        left_or_right = "left"
+
+    return wrap_path, curv, center, left_or_right
 
 
 # ----------------------------------------------------------------------- #

@@ -166,16 +166,21 @@ def combing_color_thresh(img):
     binary[(img[:, :, 2] > thresh[0]) & (img[:, :, 2] <= thresh[1])] = 255
 
     # combined mask
-    combined_mask = cv2.bitwise_or(mask_yellow, mask_white)
-    combined_mask = cv2.bitwise_or(combined_mask, binary)
+    combined_mask_yw = cv2.bitwise_or(mask_yellow, mask_white)
+    combined_mask = cv2.bitwise_or(combined_mask_yw, binary)
+
+    # color_binary = np.dstack((np.zeros_like(combined_mask), binary, combined_mask_yw))
+    # plt.figure()
+    # plt.imshow(color_binary)
 
     return combined_mask
 
 
 if __name__ == '__main__':
 
-    test_image = '../test_images/straight_lines1.jpg'
-    test_image = '../test_images/test6.jpg'
+    # test_image = '../test_images/straight_lines1.jpg'
+    # test_image = '../test_images/test6.jpg'
+    test_image = '../test_images/project2.png'
     # Read image
     img = cv2.imread(test_image)
 
@@ -199,33 +204,33 @@ if __name__ == '__main__':
     # Combined Sobelx, Sobely, Magnitude, Direction the operator
     img_comb_out_1 = combing_smd_thresh(img_gray, kernel=7)
 
-    # Show original image
-    plt.figure()
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-
-    # Customizing Figure Layouts
-    fig = plt.figure(figsize=(16, 8))
-    gs1 = gridspec.GridSpec(3, 2, right=0.48, wspace=0.1)
-
-    ax1 = fig.add_subplot(gs1[0, 0])
-    plt.title('Sobel X')
-    plt.imshow(img_sobelx_out, cmap='gray')
-
-    ax2 = fig.add_subplot(gs1[0, 1])
-    plt.title('Sobel Y')
-    plt.imshow(img_sobely_out, cmap='gray')
-
-    ax3 = fig.add_subplot(gs1[1, 0])
-    plt.title('Magnitude')
-    plt.imshow(img_mag_out, cmap='gray')
-
-    ax4 = fig.add_subplot(gs1[1, 1])
-    plt.title('Direction')
-    plt.imshow(img_dir_out, cmap='gray')
-
-    ax5 = fig.add_subplot(gs1[2, :])
-    plt.title('Combined')
-    plt.imshow(img_comb_out_1, cmap='gray')
+    # # Show original image
+    # plt.figure()
+    # plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    #
+    # # Customizing Figure Layouts
+    # fig = plt.figure(figsize=(16, 8))
+    # gs1 = gridspec.GridSpec(3, 2, right=0.48, wspace=0.1)
+    #
+    # ax1 = fig.add_subplot(gs1[0, 0])
+    # plt.title('Sobel X')
+    # plt.imshow(img_sobelx_out, cmap='gray')
+    #
+    # ax2 = fig.add_subplot(gs1[0, 1])
+    # plt.title('Sobel Y')
+    # plt.imshow(img_sobely_out, cmap='gray')
+    #
+    # ax3 = fig.add_subplot(gs1[1, 0])
+    # plt.title('Magnitude')
+    # plt.imshow(img_mag_out, cmap='gray')
+    #
+    # ax4 = fig.add_subplot(gs1[1, 1])
+    # plt.title('Direction')
+    # plt.imshow(img_dir_out, cmap='gray')
+    #
+    # ax5 = fig.add_subplot(gs1[2, :])
+    # plt.title('Combined')
+    # plt.imshow(img_comb_out_1, cmap='gray')
 
     # HLS S Channel detection
     img_s_output = hls_detect(img, thresh=(155, 255))
