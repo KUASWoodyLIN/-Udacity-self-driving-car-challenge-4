@@ -169,20 +169,19 @@ def histogram_search(binary_warped):
 
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-
-    # # plot the left and right lines on image
-    # plt.figure()
-    # plt.imshow(out_img)
-    # plt.plot(left_fitx, ploty, color='yellow')
-    # plt.plot(right_fitx, ploty, color='yellow')
-    # plt.xlim(0, 1280)
-    # plt.ylim(720, 0)
+    # plot the left and right lines on image
+    plt.figure()
+    plt.imshow(out_img)
+    plt.plot(left_fitx, ploty, color='yellow')
+    plt.plot(right_fitx, ploty, color='yellow')
+    plt.xlim(0, 1280)
+    plt.ylim(720, 0)
 
     # Draw the car path on the wrap images
     wrap_path = draw_path_way(binary_warped, left_fitx, right_fitx, ploty)
 
     # Determine the curvature of the lane and vehicle position with respect to center.
-    curv = measure_curv(left_fit, right_fit, left_fitx, right_fitx)
+    curv = measure_curv(left_fitx, right_fitx)
     center = measure_center_dist(left_fitx[-1], right_fitx[-1])
     if center > 0:
         left_or_right = "right"
@@ -227,7 +226,7 @@ def histogram_search2(binary_warped, left_fit, right_fit):
     wrap_path = draw_path_way(binary_warped, left_fitx, right_fitx, ploty)
 
     # Determine the curvature of the lane and vehicle position with respect to center.
-    curv = measure_curv(left_fit, right_fit, left_fitx, right_fitx)
+    curv = measure_curv(left_fitx, right_fitx)
     center = measure_center_dist(left_fitx[-1], right_fitx[-1])
     if center > 0:
         left_or_right = "right"
@@ -240,16 +239,12 @@ def histogram_search2(binary_warped, left_fit, right_fit):
 # ----------------------------------------------------------------------- #
 # ------------------------- Measuring Curvature ------------------------- #
 # ----------------------------------------------------------------------- #
-def measure_curv(left_fit, right_fit, left_fitx, right_fitx):
-    ploty = np.linspace(0, 719, num=720)  # to cover same y-range as image
-
+def measure_curv(left_fitx, right_fitx):
+    """ Measure radius curvature and transform the unit to meters(M)"""
     # Define y-value where we want radius of curvature
+    ploty = np.linspace(0, 719, num=720)
     # I'll choose the maximum y-value, corresponding to the bottom of the image
     y_eval = np.max(ploty)
-    left_curverad = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit[0])
-    right_curverad = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit[0])
-    # print(left_curverad, right_curverad)
-    # Example values: 1926.74 1908.48
 
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 30 / 720  # meters per pixel in y dimension
@@ -267,6 +262,19 @@ def measure_curv(left_fit, right_fit, left_fitx, right_fitx):
     # Example values: 632.1 m    626.2 m
     # print(left_curverad, 'm', right_curverad, 'm')
     return (left_curverad + right_curverad) / 2
+
+
+def measure_curv2(left_fit, right_fit, left_fitx, right_fitx):
+    # Define y-value where we want radius of curvature
+    ploty = np.linspace(0, 719, num=720)
+    # I'll choose the maximum y-value, corresponding to the bottom of the image
+    y_eval = np.max(ploty)
+
+    left_curverad = ((1 + (2 * left_fit[0] * y_eval + left_fit[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit[0])
+    right_curverad = ((1 + (2 * right_fit[0] * y_eval + right_fit[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit[0])
+    # print(left_curverad, right_curverad)
+    # Example values: 1926.74 1908.48
+    return left_curverad, right_curverad
 
 
 # ----------------------------------------------------------------------- #

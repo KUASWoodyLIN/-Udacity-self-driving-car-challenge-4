@@ -55,6 +55,43 @@ def process_image(image, show_birdview=False):
     image_bird_view = cv2.warpPerspective(image_binary, perspective_M, image.shape[1::-1], flags=cv2.INTER_LINEAR)
 
     # find the road lines, curvature and distance between car_center and road_center
+    color_warp, curv, center, left_or_right, left_line.new_fit, right_line.new_fit, left_line.allx, right_line.allx = histogram_search(image_bird_view)
+
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    warp_back = cv2.warpPerspective(color_warp, inver_perspective_M, (image.shape[1], image.shape[0]))
+
+    # Combine the result with the original image
+    img_out = cv2.addWeighted(image, 1, warp_back, 0.3, 0)
+
+    # Add description on images
+    text1 = "Radius of Curature = {:.2f}(m)".format(curv)
+    text2 = "Vehicle is {:.3f}m {} of center".format(abs(center), left_or_right)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(img_out, text1, (50, 50), font, 1.5, color=(255, 255, 255), thickness=3)
+    cv2.putText(img_out, text2, (50, 100), font, 1.5, color=(255, 255, 255), thickness=3)
+
+    if show_birdview:
+        show_image_bird_view = cv2.resize(image_bird_view, (360, 360))
+        show_image_bird_view = cv2.cvtColor(show_image_bird_view, cv2.COLOR_GRAY2RGB)
+        show_color_warp = cv2.resize(color_warp, (360, 360))
+        show_color_warp = cv2.addWeighted(show_image_bird_view, 1, show_color_warp, 0.5, 0)
+        return img_out, show_image_bird_view, show_color_warp
+
+    return img_out
+
+
+def process_video(image, show_birdview=False):
+    global count_h1, count_h2
+    # Apply a distortion correction to raw images.
+    image = cv2.undistort(image, mtx, dist, None, None)
+
+    # Use color transforms, gradients to find the object edge and change into binary image
+    image_binary = combing_color_thresh(image)
+
+    # Transform image to bird view
+    image_bird_view = cv2.warpPerspective(image_binary, perspective_M, image.shape[1::-1], flags=cv2.INTER_LINEAR)
+
+    # find the road lines, curvature and distance between car_center and road_center
     if not left_line.detected or not right_line.detected:
         color_warp, curv, center, left_or_right, left_line.new_fit, right_line.new_fit, \
         left_line.allx, right_line.allx = histogram_search(image_bird_view)
@@ -63,15 +100,16 @@ def process_image(image, show_birdview=False):
         color_warp, curv, center, left_or_right, left_line.new_fit, right_line.new_fit, \
         left_line.allx, right_line.allx = histogram_search2(image_bird_view, left_line.best_fit, right_line.best_fit)
         count_h2 += 1
+
     # Check the lines health
     left_line.fit_fix()
     right_line.fit_fix()
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, inver_perspective_M, (image.shape[1], image.shape[0]))
+    warp_back = cv2.warpPerspective(color_warp, inver_perspective_M, (image.shape[1], image.shape[0]))
 
     # Combine the result with the original image
-    img_out = cv2.addWeighted(image, 1, newwarp, 0.3, 0)
+    img_out = cv2.addWeighted(image, 1, warp_back, 0.3, 0)
 
     # Add description on images
     text1 = "Radius of Curature = {:.2f}(m)".format(curv)
@@ -95,7 +133,7 @@ def test_image():
     random_chose = random.randint(0, len(IMAGES_PATH)-1)
     img_test = IMAGES_PATH[random_chose]
     print(img_test)
-    img = cv2.imread('./test_images/test5.jpg')
+    img = cv2.imread('./test_images/test3.jpg')
 
     img_out = process_image(img)
 
@@ -116,7 +154,9 @@ def test_image():
 def test_images():
     for path in IMAGES_PATH:
         img = cv2.imread(path)
-        img_out = process_image(img)
+        img_out, show_image_bird_view, show_color_warp = process_image(img, show_birdview=True)
+        add_image = np.vstack((show_image_bird_view, show_color_warp))
+        img_out = np.hstack((img_out, add_image))
         img_out_path = os.path.join(IMAGE_OUTPUT_DIR, os.path.split(path)[-1].split('.')[0] + '.png')
         cv2.imwrite(img_out_path, img_out)
 
@@ -134,7 +174,7 @@ def test_video():
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
-            img_out, show_image_bird_view, show_color_warp = process_image(frame, show_birdview=True)
+            img_out, show_image_bird_view, show_color_warp = process_video(frame, show_birdview=True)
             add_image = np.vstack((show_image_bird_view, show_color_warp))
             img_out = np.hstack((img_out, add_image))
             out.write(img_out)
@@ -150,4 +190,4 @@ def test_video():
 
 
 if __name__ == '__main__':
-    test_video()
+    test_image()
