@@ -31,8 +31,8 @@ else:
 
 # Get Perspective Transform Parameter
 offset = 1280 / 2
-# src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])     # Longer line
-src = np.float32([(578, 460), (704, 460), (1120, 720), (193, 720)])     # shorter line
+src = np.float32([(596, 447), (683, 447), (1120, 720), (193, 720)])     # Longer line
+# src = np.float32([(578, 460), (704, 460), (1120, 720), (193, 720)])     # shorter line
 dst = np.float32([(offset-300, 0), (offset+300, 0), (offset+300, 720), (offset-300, 720)])
 perspective_M = cv2.getPerspectiveTransform(src, dst)
 inver_perspective_M = cv2.getPerspectiveTransform(dst, src)
@@ -190,4 +190,4 @@ def test_video():
 
 
 if __name__ == '__main__':
-    test_image()
+    test_video()
